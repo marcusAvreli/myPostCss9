@@ -1,0 +1,54 @@
+import fs from 'fs'
+import path from 'path'
+import postcss from 'postcss';
+import autoprefixer from 'autoprefixer';
+import resolve from 'rollup-plugin-node-resolve';
+import sass from 'rollup-plugin-sass'
+import commonjs from 'rollup-plugin-commonjs'
+const replace = require('rollup-plugin-replace'); // use to setup project environment variables
+const distDirectory = path.join(__dirname, './dist')
+const srcDirectory = path.join(__dirname, './src')
+//https://github.com/baloise/design-system/blob/b607f3db6c9fbb6656190202c7ac22e9d4da73cf/rollup.base.js#L8
+// output: isIndex ? path.join( 
+//https://github.com/LLLLLamHo/zzc-design-mobile/blob/5a7fcbae053846d8fe913311c80038157685e9f7/config/inputOption.js#L8
+//https://github.com/keeev/tippyjs/tree/53ba41eaf8784c5928b10566415d7f1736218f42?tab=readme-ov-file
+//https://github.com/GoogleChromeLabs/squoosh/blob/e217740e536c4ee30e5d0e013281d1c25663dcf3/lib/css-plugin.js#L111
+const packagejson = require('./package.json');
+
+
+import json from 'rollup-plugin-json';
+//import html from '@rollup/plugin-html';
+
+import { terser } from 'rollup-plugin-terser';
+
+import scss from 'rollup-plugin-scss';
+
+import cssnano from 'cssnano';
+
+
+
+const cssPrefix = `.${packagejson.name.replace('@axa-ch/', '').replace(new RegExp('-', 'g'),'')}`;
+  const sassOptions = {output:true};
+  sassOptions.processor = css => postcss([cssnano]).process(css,{from:undefined}).then(result => 
+	  {
+		//  console.log("rrrrr:"+result.css);
+		  result.css;});
+export default {
+  input: 'src/index.js',
+  output: {
+    file: 'lib/index.js',
+    format: 'es',
+  },
+  plugins: [
+    replace({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    }),
+     sass(sassOptions),
+   
+    // import images as inlined base64-encoded strings
+    // https://github.com/rollup/rollup-plugin-url
+   
+   
+  
+  ]
+};

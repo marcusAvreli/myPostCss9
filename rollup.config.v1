@@ -1,0 +1,80 @@
+import commonjs from 'rollup-plugin-commonjs'
+import fs from 'fs'
+import path from 'path'
+import postcss from 'postcss';
+import autoprefixer from 'autoprefixer';
+import resolve from 'rollup-plugin-node-resolve';
+import sass from 'rollup-plugin-sass'
+const distDirectory = path.join(__dirname, './dist')
+const srcDirectory = path.join(__dirname, './src')
+//https://github.com/baloise/design-system/blob/b607f3db6c9fbb6656190202c7ac22e9d4da73cf/rollup.base.js#L8
+// output: isIndex ? path.join( 
+//https://github.com/LLLLLamHo/zzc-design-mobile/blob/5a7fcbae053846d8fe913311c80038157685e9f7/config/inputOption.js#L8
+//https://github.com/keeev/tippyjs/tree/53ba41eaf8784c5928b10566415d7f1736218f42?tab=readme-ov-file
+const sassOptions = {
+	// Processor will be called with two arguments:
+	// - style: the compiled css
+	// - id: import id
+	
+	processor(css) {
+		return postcss([  
+			autoprefixer({
+				grid: false
+			})
+		])
+		.process(css,{ from: undefined, map: { inline: false } })
+		.then(result => result.css);
+	},
+	
+	// - styles: the contents of all style tags combined: 'body { color: green }'
+	// - styleNodes: an array of style objects: { filename: 'body { ... }' }
+	output(styles, styleNodes) 
+	{
+		postcss([autoprefixer])
+		//postcss()
+		.process(styles,{ from: undefined, map: { inline: false } })
+		//.process(styles)
+		.then(({ css }) => {
+			fs.writeFileSync(
+				'dist/main.css',css
+			//	new CleanCSS().minify(css).styles
+			);
+		});
+	},
+};
+
+const plugins = [
+ // resolve(),
+  //commonjs(), 
+];
+plugins.push(sass(sassOptions));
+
+
+const config = [{
+	 
+    input: 'src/index.js',    
+	plugins,
+	output: [	
+		{
+			format: "umd",
+			name : 'myzoo',
+			file: './dist/result.js',
+			sourcemap: false,
+		},
+	]
+
+}]
+ 
+export default config
+
+
+//import postcssPlugin  from 'rollup-plugin-postcss'
+//import CleanCSS from 'clean-css';
+//import packageJson from './package.json'
+//import clean from 'postcss-clean';
+//import scss from 'rollup-plugin-scss';
+//import {writeFileSync} from 'fs';
+//import  normalize from 'postcss-normalize';
+//import cssnano from 'cssnano';
+//import rimraf from 'rimraf'
+//import babel from 'rollup-plugin-babel'

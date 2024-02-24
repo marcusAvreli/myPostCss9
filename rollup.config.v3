@@ -1,0 +1,201 @@
+import fs from 'fs'
+import path from 'path'
+import postcss from 'postcss';
+import autoprefixer from 'autoprefixer';
+import resolve from 'rollup-plugin-node-resolve';
+import sass from 'rollup-plugin-sass'
+import commonjs from 'rollup-plugin-commonjs'
+const distDirectory = path.join(__dirname, './dist')
+const srcDirectory = path.join(__dirname, './src')
+//https://github.com/baloise/design-system/blob/b607f3db6c9fbb6656190202c7ac22e9d4da73cf/rollup.base.js#L8
+// output: isIndex ? path.join( 
+//https://github.com/LLLLLamHo/zzc-design-mobile/blob/5a7fcbae053846d8fe913311c80038157685e9f7/config/inputOption.js#L8
+//https://github.com/keeev/tippyjs/tree/53ba41eaf8784c5928b10566415d7f1736218f42?tab=readme-ov-file
+
+
+
+import json from 'rollup-plugin-json';
+//import html from '@rollup/plugin-html';
+
+import { terser } from 'rollup-plugin-terser';
+
+import scss from 'rollup-plugin-scss';
+
+import cssnano from 'cssnano';
+
+
+
+// Which nzz layout to use?
+const LAYOUT = process.env.LAYOUT;
+const builtCssFilename = 'bundle';
+
+const production = !process.env.ROLLUP_WATCH;
+const projectRootDir = path.resolve(__dirname);
+
+function getOutputConfigs() {
+  const outputConfigs = [];
+  for (let item of qConfig.items) {
+    for (let environment of item.environments) {
+      if (environment.id !== '') {
+        outputConfigs.push({
+          sourcemap: production ? false : true,
+          format: 'iife',
+          name: `window._q_custom_code_${environment.id}.App`,
+          file: `public/bundle-${environment.id}.js`,
+        });
+      }
+    }
+  }
+
+  return outputConfigs;
+}
+
+function getHtmlOptions() {
+  return {
+    fileName: 'index.html',
+    template: function (options) {
+      return getHtml({
+        // These 3 options are the most important. Without them the static website will not function.
+        layout: LAYOUT, // Type of layout.
+        builtCssFilename, // Will be appended at the end of <head>.
+        builtJsFilename: options.files.js[0].fileName, // Will appended to the end of <body>.
+
+        // Create mock elements to simulate your article.
+        content: `
+                  ${createSubtitle('Test Subtitle')}
+                  ${createParagraph('Test paragraph')}
+                  ${createFullwidthQElement('custom-code-fw')}
+                  ${createContentWidthQElement('custom-code-cw')}
+              `,
+
+        // Other options.
+        author: 'Max Musterman',
+        lead: 'Test lead.',
+        title: 'Test title',
+
+        // Links to other css files that need to be loaded.
+        // Will be appended to <head> but before the bundled css file of your app.
+        customCssLinks: [
+          'https://service.sophie.nzz.ch/bundle/sophie-q@^1,sophie-input@^1,sophie-font@^1,sophie-color@^1,sophie-viz-color@^1,sophie-legend@^1.css',
+        ],
+
+        // Links to other js filed that need to be loaded.
+        // Will be appended at the end of the body, but before the built js file for the app.
+        customJsLinks: [
+          'https://cdn.polyfill.io/v2/polyfill.min.js?features=Map,URL,Promise,fetch,URLSearchParams,Array.prototype.find,Array.prototype.findIndex,Object.entries,Array.prototype.includes,CustomEvent,Array.from,String.prototype.startsWith&flags=gated&unknown=polyfill',
+        ],
+      });
+    },
+  };
+}
+
+function getPostcssPlugins(isProduction) {
+  const postcssPlugins = [autoprefixer];
+
+  if (isProduction) {
+    postcssPlugins.push(cssnano);
+  }
+
+  return postcssPlugins;
+}
+
+function createOutputCssFunction() {
+  const outputCssFunction = (styles, styleNodes) => {
+    const publicDir = './public';
+console.log("hello:"+JSON.stringify(styles));
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir);
+    }
+
+    fs.writeFileSync(`${publicDir}/${builtCssFilename}.css`, styles);
+  };
+
+  return outputCssFunction;
+}
+
+function getSassConfig(isProduction) {
+  const config = {
+    outputStyle: isProduction ? 'compressed' : 'expanded',
+    // Sourcemap generation (specifically writing the file to system) is currently not supported by rollup-plugin-sass (but soon!)
+    // See: https://github.com/thgh/rollup-plugin-scss/issues/7
+    // outFile: path.join(__dirname, "/public/default.css"), // <- Uncomment after: https://github.com/thgh/rollup-plugin-scss/issues/7
+    sourceMap: !isProduction,
+    sourceMapEmbed: !isProduction, // Remove after: https://github.com/thgh/rollup-plugin-scss/issues/7
+    failOnError: !isProduction,
+    watch: [path.join(__dirname, '/src')],
+    processor: (css) =>
+      postcss(getPostcssPlugins(isProduction))
+        .process(css, {
+          from: path.join(__dirname, `/public/${builtCssFilename}.css`),
+          to: path.join(__dirname, `/public/${builtCssFilename}.css`),
+          map: isProduction ? false : { inline: true }, // Set to false after: https://github.com/thgh/rollup-plugin-scss/issues/7
+        })
+        .then((result) => {
+			
+			result.css}),
+    output: createOutputCssFunction(),
+  };
+
+  return config;
+}
+
+export default {
+  input:  'src/index.js',
+  output: [	
+		{
+			format: "umd",
+			name : 'myzoo',
+			file: './dist/result.js',
+			sourcemap: false,
+		},
+	],
+
+  plugins: [
+    /*alias({
+      entries: [
+        { find: '@src', replacement: path.resolve(projectRootDir, 'src') },
+      
+      ],
+    }),
+	*/
+
+   
+    json(),
+   
+   
+
+    // All styles have to be written in .scss files (inside '/src')
+    // Sass files (except partials) have to be imported in main.scss file (Use '@use' instead of '@import')
+    // Partials are placed in '/src/styles' (e.g. _variables.scss, _helpers.scss)
+    // Partials are imported directly in other sass files (e.g. _variables.scss -> '@use "variables"')
+    scss({ ...getSassConfig(production) }),
+
+    // If you have external dependencies installed from
+    // npm, you'll most likely need these plugins. In
+    // some cases you'll need additional configuration —
+    // consult the documentation for details:
+    // https://github.com/rollup/rollup-plugin-commonjs
+    resolve({ browser: true }),
+    commonjs(),
+
+    // Generate a index.html file when not building for production
+   // !production && html(getHtmlOptions()),
+
+    // Watch the `public` directory and refresh the
+    // browser on changes when not in production
+  
+  ],
+ 
+};
+
+
+//import postcssPlugin  from 'rollup-plugin-postcss'
+//import CleanCSS from 'clean-css';
+//import packageJson from './package.json'
+//import clean from 'postcss-clean';
+//import scss from 'rollup-plugin-scss';
+//import {writeFileSync} from 'fs';
+//import  normalize from 'postcss-normalize';
+//import cssnano from 'cssnano';
+//import rimraf from 'rimraf'
+//import babel from 'rollup-plugin-babel'
